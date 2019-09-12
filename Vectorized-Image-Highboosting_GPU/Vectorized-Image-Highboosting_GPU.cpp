@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------------------------------|
-// IMAGE HIGHBOOSTING IN FREQUENCY DOMAIN USING DISCRETE FOURIER TRANSFORMATION AND IDEAL FILTER.		|
+// IMAGE HIGHBOOSTING IN FREQUENCY DOMAIN USING DISCRETE FOURIER TRANSFORMATION AND IDEAL FILTER.	|
 // IMAGE HIGHBOOSTING IN FREQUENCY DOMAIN USING DISCRETE FOURIER TRANSFORMATION AND GAUSSIAN FILTER.	|
 // IMAGE HIGHBOOSTING IN FREQUENCY DOMAIN USING DISCRETE FOURIER TRANSFORMSTION AND BUTTERWORTH FILTER. |
-// IMAGE HIGHBOOSTING IN FREQUENCY DOMAIN USING DISCRETE FOURIER TRANSFORMSTION AND LoG FILTER.			|
-// Image Highboosting.cpp : Defines the entry point for the console application.						|
+// IMAGE HIGHBOOSTING IN FREQUENCY DOMAIN USING DISCRETE FOURIER TRANSFORMSTION AND LoG FILTER.		|
+// Image Highboosting.cpp : Defines the entry point for the console application.			|
 //------------------------------------------------------------------------------------------------------|
 
 //++++++++++++++++++++++++++++++++++ START HEADER FILES +++++++++++++++++++++++++++++++++++++++++++++
@@ -29,61 +29,61 @@ using namespace cv;
 //+++++++++++++++++++++++++++++++++ RGB TO RGBA KERNEL ++++++++++++++++++++++++++++++++++++++++++++++
 // OpenCL RGB to RGBA Kernel Which Is Run For Every Work Items Created.
 const char* RGBA_Kernel =
-"#pragma OPENCL EXTENSION cl_khr_fp32 : enable												\n" \
-"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |							\n" \
-"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;					\n" \
-"__kernel																					\n" \
-"void RGBA_Kernel(__global uchar* data,														\n" \
-"					__write_only image2d_t iimage,											\n" \
-"					int width)																\n" \
-"{																							\n" \
-"	int globalID = get_global_id(0);														\n" \
-"	int u = globalID / width;																\n"	\
-"	int v = globalID % width;																\n" \
-"	float4 ipixelValue;																		\n" \
-"	ipixelValue.x = (float)data[3 * globalID];												\n" \
-"	ipixelValue.y = (float)data[3 * globalID + 1];											\n" \
-"	ipixelValue.z = (float)data[3 * globalID + 2];											\n"	\
-"	ipixelValue.w = 255.0;																	\n"	\
-"	write_imagef(iimage, (int2)(v, u), ipixelValue);										\n" \
-"}																							\n" \
+"#pragma OPENCL EXTENSION cl_khr_fp32 : enable								\n" \
+"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |					\n" \
+"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;	\n" \
+"__kernel												\n" \
+"void RGBA_Kernel(__global uchar* data,									\n" \
+"					__write_only image2d_t iimage,					\n" \
+"					int width)							\n" \
+"{													\n" \
+"	int globalID = get_global_id(0);								\n" \
+"	int u = globalID / width;									\n" \
+"	int v = globalID % width;									\n" \
+"	float4 ipixelValue;										\n" \
+"	ipixelValue.x = (float)data[3 * globalID];							\n" \
+"	ipixelValue.y = (float)data[3 * globalID + 1];							\n" \
+"	ipixelValue.z = (float)data[3 * globalID + 2];							\n" \
+"	ipixelValue.w = 255.0;										\n" \
+"	write_imagef(iimage, (int2)(v, u), ipixelValue);						\n" \
+"}													\n" \
 "\n";
 //+++++++++++++++++++++++++++++++++ END RGB To RGBA KERNEL ++++++++++++++++++++++++++++++++++++++++++
 
 //+++++++++++++++++++++++++++++++++ HORIZONTAL DFT KERNEL +++++++++++++++++++++++++++++++++++++++++++
 // OpenCL Horizontal Row Wise DFT Kernel Which Is Run For Every Work Item Created.
 const char* HDFT_Kernel =
-"#pragma OPENCL EXTENSION cl_khr_fp32 : enable												\n" \
-"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |							\n" \
-"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;					\n" \
-"__kernel																					\n" \
-"void HDFT_Kernel(__read_only image2d_t iimage,												\n" \
-"					__write_only image2d_t trimage,											\n" \
-"					__write_only image2d_t tiimage,											\n" \
-"					__local float4* SharedArrayR,											\n" \
-"					__local float4* SharedArrayI,											\n" \
-"					int width,																\n" \
-"					float norm)																\n" \
-"{																							\n" \
-"	int globalID = get_global_id(0);														\n" \
-"	int localID = get_local_id(0);															\n" \
-"	int groupID = get_group_id(0);															\n" \
-"	int v = globalID % width;																\n" \
-"	float param = (-2.0*v)/width;															\n" \
-"	SharedArrayR[localID] = (0.0, 0.0, 0.0, 0.0);											\n" \
-"	SharedArrayI[localID] = (0.0, 0.0, 0.0, 0.0);											\n" \
-"	float c, s;																				\n" \
-"	float4 valueH;																			\n" \
-"	//valueH = read_imagef(iimage, image_sampler, (int2)(u, v));							\n" \
-"	// Horizontal DFT Transformation														\n" \
-"	for (int i = 0; i < width; i++)															\n" \
-"	{																						\n" \
-"		valueH = read_imagef(iimage, image_sampler, (int2)(groupID, i));					\n" \
-"		s = sinpi(i * param);																\n" \
-"		c = cospi(i * param);																\n" \
-"		SharedArrayR[localID] += valueH * c;												\n" \
-"		SharedArrayI[localID] += valueH * s;												\n" \
-"	}																						\n" \
+"#pragma OPENCL EXTENSION cl_khr_fp32 : enable								\n" \
+"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |					\n" \
+"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;	\n" \
+"__kernel												\n" \
+"void HDFT_Kernel(__read_only image2d_t iimage,								\n" \
+"					__write_only image2d_t trimage,					\n" \
+"					__write_only image2d_t tiimage,					\n" \
+"					__local float4* SharedArrayR,					\n" \
+"					__local float4* SharedArrayI,					\n" \
+"					int width,							\n" \
+"					float norm)							\n" \
+"{													\n" \
+"	int globalID = get_global_id(0);								\n" \
+"	int localID = get_local_id(0);									\n" \
+"	int groupID = get_group_id(0);									\n" \
+"	int v = globalID % width;									\n" \
+"	float param = (-2.0*v)/width;									\n" \
+"	SharedArrayR[localID] = (0.0, 0.0, 0.0, 0.0);							\n" \
+"	SharedArrayI[localID] = (0.0, 0.0, 0.0, 0.0);							\n" \
+"	float c, s;											\n" \
+"	float4 valueH;											\n" \
+"	//valueH = read_imagef(iimage, image_sampler, (int2)(u, v));					\n" \
+"	// Horizontal DFT Transformation								\n" \
+"	for (int i = 0; i < width; i++)									\n" \
+"	{												\n" \
+"		valueH = read_imagef(iimage, image_sampler, (int2)(groupID, i));			\n" \
+"		s = sinpi(i * param);									\n" \
+"		c = cospi(i * param);									\n" \
+"		SharedArrayR[localID] += valueH * c;							\n" \
+"		SharedArrayI[localID] += valueH * s;							\n" \
+"	}												\n" \
 "	write_imagef(trimage, (int2)(groupID, localID), norm * SharedArrayR[localID]);			\n" \
 "	write_imagef(tiimage, (int2)(groupID, localID), norm * SharedArrayI[localID]);			\n" \
 "}																							\n" \
@@ -92,279 +92,279 @@ const char* HDFT_Kernel =
 
 //+++++++++++++++++++++++++++++++++++ VERTICAL DFT KERNEL +++++++++++++++++++++++++++++++++++++++++++
 // OpenCL Vertical Column Wise DFT Kernel Which Is Run For Every Work Item Created.
-const char* VDFT_Kernel =
-"#pragma OPENCL EXTENSION cl_khr_fp32 : enable												\n" \
-"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |							\n" \
-"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;					\n" \
-"__kernel																					\n" \
-"void VDFT_Kernel(__read_only image2d_t trimage,											\n" \
-"				  __read_only image2d_t tiimage,											\n" \
-"				  __write_only image2d_t orimage,											\n" \
-"				  __write_only image2d_t oiimage,											\n" \
-"				  __local float4* SharedArrayR,												\n" \
-"				  __local float4* SharedArrayI,												\n" \
-"					int width,																\n" \
-"					float norm)																\n" \
-"{																							\n" \
-"	size_t globalID = get_global_id(0);														\n" \
-"	size_t localID = get_local_id(0);														\n" \
-"	size_t groupID = get_group_id(0);														\n" \
-"	int v = globalID % width;																\n" \
-"	float param = (-2.0*v)/width;															\n" \
-"	SharedArrayR[localID] = (0.0, 0.0, 0.0, 0.0);											\n" \
-"	SharedArrayI[localID] = (0.0, 0.0, 0.0, 0.0);											\n" \
-"	float c, s;																				\n" \
-"	float4 valueR, valueI;																	\n" \
-"	//valueR = read_imagef(trimage, image_sampler, (int2)(u, v));							\n" \
-"	//valueI = read_imagef(tiimage, image_sampler, (int2)(u, v));							\n" \
-"	// Horizontal DFT Transformation														\n" \
-"	for (int i = 0; i < width; i++)															\n" \
-"	{																						\n" \
-"		valueR = read_imagef(trimage, image_sampler, (int2)(i, groupID));					\n" \
-"		valueI = read_imagef(tiimage, image_sampler, (int2)(i, groupID));					\n" \
-"		s = sinpi(i * param);																\n" \
-"		c = cospi(i * param);																\n" \
-"		SharedArrayR[localID] += valueR * c - valueI * s;									\n" \
-"		SharedArrayI[localID] += valueR * s + valueI * c;									\n" \
-"	}																						\n" \
+const char* VDFT_Kernel = 
+"#pragma OPENCL EXTENSION cl_khr_fp32 : enable								\n" \
+"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |					\n" \
+"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;	\n" \
+"__kernel												\n" \
+"void VDFT_Kernel(__read_only image2d_t trimage,							\n" \
+"				  __read_only image2d_t tiimage,					\n" \
+"				  __write_only image2d_t orimage,					\n" \
+"				  __write_only image2d_t oiimage,					\n" \
+"				  __local float4* SharedArrayR,						\n" \
+"				  __local float4* SharedArrayI,						\n" \
+"					int width,							\n" \
+"					float norm)							\n" \
+"{													\n" \
+"	size_t globalID = get_global_id(0);								\n" \
+"	size_t localID = get_local_id(0);								\n" \
+"	size_t groupID = get_group_id(0);								\n" \
+"	int v = globalID % width;									\n" \
+"	float param = (-2.0*v)/width;									\n" \
+"	SharedArrayR[localID] = (0.0, 0.0, 0.0, 0.0);							\n" \
+"	SharedArrayI[localID] = (0.0, 0.0, 0.0, 0.0);							\n" \
+"	float c, s;											\n" \
+"	float4 valueR, valueI;										\n" \
+"	//valueR = read_imagef(trimage, image_sampler, (int2)(u, v));					\n" \
+"	//valueI = read_imagef(tiimage, image_sampler, (int2)(u, v));					\n" \
+"	// Horizontal DFT Transformation								\n" \
+"	for (int i = 0; i < width; i++)									\n" \
+"	{												\n" \
+"		valueR = read_imagef(trimage, image_sampler, (int2)(i, groupID));			\n" \
+"		valueI = read_imagef(tiimage, image_sampler, (int2)(i, groupID));			\n" \
+"		s = sinpi(i * param);									\n" \
+"		c = cospi(i * param);									\n" \
+"		SharedArrayR[localID] += valueR * c - valueI * s;					\n" \
+"		SharedArrayI[localID] += valueR * s + valueI * c;					\n" \
+"	}												\n" \
 "	write_imagef(orimage, (int2)(localID, groupID), norm * SharedArrayR[localID]);			\n" \
 "	write_imagef(oiimage, (int2)(localID, groupID), norm * SharedArrayI[localID]);			\n" \
-"}																							\n" \
+"}													\n" \
 "\n";
 //++++++++++++++++++++++++++++++++++++ END V-DFT KERNEL +++++++++++++++++++++++++++++++++++++++++++++
 
 //+++++++++++++++++++++++++++++++++++ VERTICAL IDFT KERNEL ++++++++++++++++++++++++++++++++++++++++++
 // OpenCL Vertical Column Wise IDFT Kernel Which Is Run For Every Work Item Created.
 const char* VIDFT_Kernel =
-"#pragma OPENCL EXTENSION cl_khr_fp32 : enable												\n" \
-"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |							\n" \
-"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;					\n" \
-"__kernel																					\n" \
-"void VIDFT_Kernel(__write_only image2d_t trimage,											\n" \
-"				   __write_only image2d_t tiimage,											\n" \
-"				   __read_only image2d_t orimage,											\n" \
-"				   __read_only image2d_t oiimage,											\n" \
-"				   __local float4* SharedArrayR,											\n" \
-"				   __local float4* SharedArrayI,											\n" \
-"					int width,																\n" \
-"					float norm)																\n" \
-"{																							\n" \
-"	int globalID = get_global_id(0);														\n" \
-"	int localID = get_local_id(0);															\n" \
-"	int groupID = get_group_id(0);															\n" \
-"	int v = globalID % width;																\n" \
-"	float param = (2.0*v)/width;															\n" \
-"	SharedArrayR[localID] = (0.0, 0.0, 0.0, 0.0);											\n" \
-"	SharedArrayI[localID] = (0.0, 0.0, 0.0, 0.0);											\n" \
-"	float c, s;																				\n" \
-"	float4 valueR, valueI;																	\n" \
-"	//valueR = read_imagef(orimage, image_sampler, (int2)(u, v));							\n" \
-"	//valueI = read_imagef(oiimage, image_sampler, (int2)(u, v));							\n" \
-"	// Horizontal IDFT Transformation														\n" \
-"	for (int i = 0; i < width; i++)															\n" \
-"	{																						\n" \
-"		valueR = read_imagef(orimage, image_sampler, (int2)(i, groupID));					\n" \
-"		valueI = read_imagef(oiimage, image_sampler, (int2)(i, groupID));					\n" \
-"		s = sinpi(i * param);																\n" \
-"		c = cospi(i * param);																\n" \
-"		SharedArrayR[localID] += valueR * c - valueI * s;									\n" \
-"		SharedArrayI[localID] += valueR * s + valueI * c;									\n" \
-"	}																						\n" \
+"#pragma OPENCL EXTENSION cl_khr_fp32 : enable								\n" \
+"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |					\n" \
+"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;	\n" \
+"__kernel												\n" \
+"void VIDFT_Kernel(__write_only image2d_t trimage,							\n" \
+"				   __write_only image2d_t tiimage,					\n" \
+"				   __read_only image2d_t orimage,					\n" \
+"				   __read_only image2d_t oiimage,					\n" \
+"				   __local float4* SharedArrayR,					\n" \
+"				   __local float4* SharedArrayI,					\n" \
+"					int width,							\n" \
+"					float norm)							\n" \
+"{													\n" \
+"	int globalID = get_global_id(0);								\n" \
+"	int localID = get_local_id(0);									\n" \
+"	int groupID = get_group_id(0);									\n" \
+"	int v = globalID % width;									\n" \
+"	float param = (2.0*v)/width;									\n" \
+"	SharedArrayR[localID] = (0.0, 0.0, 0.0, 0.0);							\n" \
+"	SharedArrayI[localID] = (0.0, 0.0, 0.0, 0.0);							\n" \
+"	float c, s;											\n" \
+"	float4 valueR, valueI;										\n" \
+"	//valueR = read_imagef(orimage, image_sampler, (int2)(u, v));					\n" \
+"	//valueI = read_imagef(oiimage, image_sampler, (int2)(u, v));					\n" \
+"	// Horizontal IDFT Transformation								\n" \
+"	for (int i = 0; i < width; i++)									\n" \
+"	{												\n" \
+"		valueR = read_imagef(orimage, image_sampler, (int2)(i, groupID));			\n" \
+"		valueI = read_imagef(oiimage, image_sampler, (int2)(i, groupID));			\n" \
+"		s = sinpi(i * param);									\n" \
+"		c = cospi(i * param);									\n" \
+"		SharedArrayR[localID] += valueR * c - valueI * s;					\n" \
+"		SharedArrayI[localID] += valueR * s + valueI * c;					\n" \
+"	}												\n" \
 "	write_imagef(trimage, (int2)(localID, groupID), norm * SharedArrayR[localID]);			\n" \
 "	write_imagef(tiimage, (int2)(localID, groupID), norm * SharedArrayI[localID]);			\n" \
-"}																							\n" \
+"}													\n" \
 "\n";
 //++++++++++++++++++++++++++++++++++++ END V-IDFT KERNEL ++++++++++++++++++++++++++++++++++++++++++++
 
 //+++++++++++++++++++++++++++++++++ HORIZONTAL DFT KERNEL +++++++++++++++++++++++++++++++++++++++++++
 // OpenCL Horizontal Row Wise DFT Kernel Which Is Run For Every Work Item Created.
 const char* HIDFT_Kernel =
-"#pragma OPENCL EXTENSION cl_khr_fp32 : enable												\n" \
-"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |							\n" \
-"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;					\n" \
-"__kernel																					\n" \
-"void HIDFT_Kernel(__write_only image2d_t iimage,											\n" \
-"					__read_only image2d_t trimage,											\n" \
-"					__read_only image2d_t tiimage,											\n" \
-"					__local float4* SharedArrayR,											\n" \
-"					__local float4* SharedArrayI,											\n" \
-"					int width,																\n" \
-"					float norm)																\n" \
-"{																							\n" \
-"	int globalID = get_global_id(0);														\n" \
-"	int localID = get_local_id(0);															\n" \
-"	int groupID = get_group_id(0);															\n" \
-"	int v = globalID % width;																\n" \
-"	float param = (2.0*v)/width;															\n" \
-"	SharedArrayR[localID] = (0.0, 0.0, 0.0, 0.0);											\n" \
-"	SharedArrayI[localID] = (0.0, 0.0, 0.0, 0.0);											\n" \
-"	float c, s;																				\n" \
-"	float4 valueR, valueI;																	\n" \
-"	// Horizontal DFT Transformation														\n" \
-"	for (int i = 0; i < width; i++)															\n" \
-"	{																						\n" \
-"		valueR = read_imagef(trimage, image_sampler, (int2)(groupID, i));					\n" \
-"		valueI = read_imagef(tiimage, image_sampler, (int2)(groupID, i));					\n" \
-"		s = sinpi(i * param);																\n" \
-"		c = cospi(i * param);																\n" \
-"		SharedArrayR[localID] += valueR * c - valueI * s;									\n" \
-"		SharedArrayI[localID] += valueR * s + valueI * c;									\n" \
-"	}																						\n" \
+"#pragma OPENCL EXTENSION cl_khr_fp32 : enable								\n" \
+"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |					\n" \
+"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;	\n" \
+"__kernel												\n" \
+"void HIDFT_Kernel(__write_only image2d_t iimage,							\n" \
+"					__read_only image2d_t trimage,					\n" \
+"					__read_only image2d_t tiimage,					\n" \
+"					__local float4* SharedArrayR,					\n" \
+"					__local float4* SharedArrayI,					\n" \
+"					int width,							\n" \
+"					float norm)							\n" \
+"{													\n" \
+"	int globalID = get_global_id(0);								\n" \
+"	int localID = get_local_id(0);									\n" \
+"	int groupID = get_group_id(0);									\n" \
+"	int v = globalID % width;									\n" \
+"	float param = (2.0*v)/width;									\n" \
+"	SharedArrayR[localID] = (0.0, 0.0, 0.0, 0.0);							\n" \
+"	SharedArrayI[localID] = (0.0, 0.0, 0.0, 0.0);							\n" \
+"	float c, s;											\n" \
+"	float4 valueR, valueI;										\n" \
+"	// Horizontal DFT Transformation								\n" \
+"	for (int i = 0; i < width; i++)									\n" \
+"	{												\n" \
+"		valueR = read_imagef(trimage, image_sampler, (int2)(groupID, i));			\n" \
+"		valueI = read_imagef(tiimage, image_sampler, (int2)(groupID, i));			\n" \
+"		s = sinpi(i * param);									\n" \
+"		c = cospi(i * param);									\n" \
+"		SharedArrayR[localID] += valueR * c - valueI * s;					\n" \
+"		SharedArrayI[localID] += valueR * s + valueI * c;					\n" \
+"	}												\n" \
 "	write_imagef(iimage, (int2)(groupID, localID), norm * SharedArrayR[localID]);			\n" \
-"}																							\n" \
+"}													\n" \
 "\n";
 //++++++++++++++++++++++++++++++++++++ END H-DFT KERNEL +++++++++++++++++++++++++++++++++++++++++++++
 
 //+++++++++++++++++++++++++++++++++ RGBA TO RGB KERNEL ++++++++++++++++++++++++++++++++++++++++++++++
 // OpenCL RGBA to RGB Kernel Which Is Run For Every Work Item Created.
 const char* RGB_Kernel =
-"#pragma OPENCL EXTENSION cl_khr_fp32 : enable												\n" \
-"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |							\n" \
-"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;					\n" \
-"__kernel																					\n" \
-"void RGB_Kernel(__global uchar* data,														\n" \
-"					__read_only image2d_t iimage,											\n" \
-"					int width)																\n" \
-"{																							\n" \
-"	int globalID = get_global_id(0);														\n" \
-"	int u = globalID / width;																\n"	\
-"	int v = globalID % width;																\n" \
-"	float4 ipixelValue;																		\n" \
-"	ipixelValue = read_imagef(iimage, image_sampler, (int2)(v, u));							\n" \
-"	data[3 * globalID] = (uchar)ipixelValue.x;												\n" \
-"	data[3 * globalID + 1] = (uchar)ipixelValue.y;											\n" \
-"	data[3 * globalID + 2] = (uchar)ipixelValue.z;											\n"	\
-"}																							\n" \
+"#pragma OPENCL EXTENSION cl_khr_fp32 : enable								\n" \
+"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |					\n" \
+"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;	\n" \
+"__kernel												\n" \
+"void RGB_Kernel(__global uchar* data,									\n" \
+"					__read_only image2d_t iimage,					\n" \
+"					int width)							\n" \
+"{													\n" \
+"	int globalID = get_global_id(0);								\n" \
+"	int u = globalID / width;									\n" \
+"	int v = globalID % width;									\n" \
+"	float4 ipixelValue;										\n" \
+"	ipixelValue = read_imagef(iimage, image_sampler, (int2)(v, u));					\n" \
+"	data[3 * globalID] = (uchar)ipixelValue.x;							\n" \
+"	data[3 * globalID + 1] = (uchar)ipixelValue.y;							\n" \
+"	data[3 * globalID + 2] = (uchar)ipixelValue.z;							\n" \
+"}													\n" \
 "\n";
 //+++++++++++++++++++++++++++++++++ END RGBA To RGB KERNEL +++++++++++++++++++++++++++++++++++++++++++
 
 //+++++++++++++++++++++++++++++++++++ IDEAL KERNEL ++++++++++++++++++++++++++++++++++++++++++++++++++
 // OpenCL High Boost Ideal Filter Kernel Which Is Run For Every Work Item Created
 const char *ideal_kernel =
-"#define EXP 2.72																			\n" \
-"#pragma OPENCL EXTENSION cl_khr_fp32 : enable												\n"	\
-"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |							\n" \
-"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;					\n" \
-"__kernel																					\n"	\
-"void ideal_kernel (__read_only image2d_t orimage,											\n"	\
-"					__read_only image2d_t oiimage,											\n"	\
-"					__write_only image2d_t trimage,											\n"	\
-"					__write_only image2d_t tiimage,											\n"	\
-"					int height,																\n"	\
-"					int width,																\n"	\
-"					int CUTOFF)																\n"	\
-"{																							\n"	\
-"	// Get the index of work items															\n"	\
-"	uint index = get_global_id(0);															\n"	\
-"	int u = index / width;																	\n"	\
-"	int v = index % width;																	\n"	\
-"	float4 ipixelValueR, ipixelValueI;														\n"	\
-"	float D = pow(height/2 - abs(u - height/2), 2.0) 										\n"	\
-"										+ pow(width/2 - abs(v - width/2), 2.0);				\n" \
-"	float H = 1.0 + ((sqrt(D) > CUTOFF)? 1.0 : 0.0);										\n"	\
-"	ipixelValueR = read_imagef(orimage, image_sampler, (int2)(u, v));						\n" \
-"	ipixelValueI = read_imagef(oiimage, image_sampler, (int2)(u, v));						\n" \
-"	write_imagef(trimage, (int2)(u, v), ipixelValueR * H);									\n" \
-"	write_imagef(tiimage, (int2)(u, v), ipixelValueI * H);									\n" \
-"}																							\n"	\
+"#define EXP 2.72											\n" \
+"#pragma OPENCL EXTENSION cl_khr_fp32 : enable								\n" \
+"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |					\n" \
+"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;	\n" \
+"__kernel												\n" \
+"void ideal_kernel (__read_only image2d_t orimage,							\n" \
+"					__read_only image2d_t oiimage,					\n" \
+"					__write_only image2d_t trimage,					\n" \
+"					__write_only image2d_t tiimage,					\n" \
+"					int height,							\n" \
+"					int width,							\n" \
+"					int CUTOFF)							\n" \
+"{													\n" \
+"	// Get the index of work items									\n" \
+"	uint index = get_global_id(0);									\n" \
+"	int u = index / width;										\n" \
+"	int v = index % width;										\n" \
+"	float4 ipixelValueR, ipixelValueI;								\n" \
+"	float D = pow(height/2 - abs(u - height/2), 2.0) 						\n" \
+"							+ pow(width/2 - abs(v - width/2), 2.0);		\n" \
+"	float H = 1.0 + ((sqrt(D) > CUTOFF)? 1.0 : 0.0);						\n" \
+"	ipixelValueR = read_imagef(orimage, image_sampler, (int2)(u, v));				\n" \
+"	ipixelValueI = read_imagef(oiimage, image_sampler, (int2)(u, v));				\n" \
+"	write_imagef(trimage, (int2)(u, v), ipixelValueR * H);						\n" \
+"	write_imagef(tiimage, (int2)(u, v), ipixelValueI * H);						\n" \
+"}													\n" \
 "\n";
 //+++++++++++++++++++++++++++++++++ END IDEAL KERNEL ++++++++++++++++++++++++++++++++++++++++++++++++
 
 //+++++++++++++++++++++++++++++++++++ GAUSSIAN KERNEL +++++++++++++++++++++++++++++++++++++++++++++++
 // OpenCL High Boost Gaussian Filter Kernel Which Is Run For Every Work Item Created
 const char *gaussian_kernel =
-"#define EXP 2.72																			\n" \
-"#pragma OPENCL EXTENSION cl_khr_fp32 : enable												\n"	\
-"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |							\n" \
-"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;					\n" \
-"__kernel																					\n"	\
-"void gaussian_kernel (__read_only image2d_t orimage,										\n"	\
-"						__read_only image2d_t oiimage,										\n"	\
-"						__write_only image2d_t trimage,										\n"	\
-"						__write_only image2d_t tiimage,										\n"	\
-"						int height,															\n"	\
-"						int width,															\n"	\
-"						int CUTOFF)															\n"	\
-"{																							\n"	\
-"	// Get the index of work items															\n"	\
-"	uint index = get_global_id(0);															\n"	\
-"	int u = index / width;																	\n"	\
-"	int v = index % width;																	\n"	\
-"	float4 ipixelValueR, ipixelValueI;														\n"	\
-"	float D = pow(height/2 - abs(u - height/2), 2.0) 										\n"	\
-"										+ pow(width/2 - abs(v - width/2), 2.0);				\n" \
-"	float H = 2.0 - pow(EXP, (-1.0 * D / (2.0 * pow(CUTOFF, 2.0))));						\n"	\
-"	ipixelValueR = read_imagef(orimage, image_sampler, (int2)(u, v));						\n" \
-"	ipixelValueI = read_imagef(oiimage, image_sampler, (int2)(u, v));						\n" \
-"	write_imagef(trimage, (int2)(u, v), ipixelValueR * H);									\n" \
-"	write_imagef(tiimage, (int2)(u, v), ipixelValueI * H);									\n" \
-"}																							\n"	\
+"#define EXP 2.72											\n" \
+"#pragma OPENCL EXTENSION cl_khr_fp32 : enable								\n" \
+"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |					\n" \
+"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;	\n" \
+"__kernel												\n" \
+"void gaussian_kernel (__read_only image2d_t orimage,							\n" \
+"						__read_only image2d_t oiimage,				\n" \
+"						__write_only image2d_t trimage,				\n" \
+"						__write_only image2d_t tiimage,				\n" \
+"						int height,						\n" \
+"						int width,						\n" \
+"						int CUTOFF)						\n" \
+"{													\n" \
+"	// Get the index of work items									\n" \
+"	uint index = get_global_id(0);									\n" \
+"	int u = index / width;										\n" \
+"	int v = index % width;										\n" \
+"	float4 ipixelValueR, ipixelValueI;								\n" \
+"	float D = pow(height/2 - abs(u - height/2), 2.0) 						\n" \
+"							+ pow(width/2 - abs(v - width/2), 2.0);		\n" \
+"	float H = 2.0 - pow(EXP, (-1.0 * D / (2.0 * pow(CUTOFF, 2.0))));				\n" \
+"	ipixelValueR = read_imagef(orimage, image_sampler, (int2)(u, v));				\n" \
+"	ipixelValueI = read_imagef(oiimage, image_sampler, (int2)(u, v));				\n" \
+"	write_imagef(trimage, (int2)(u, v), ipixelValueR * H);						\n" \
+"	write_imagef(tiimage, (int2)(u, v), ipixelValueI * H);						\n" \
+"}													\n" \
 "\n";
 //+++++++++++++++++++++++++++++++++ END GAUSSIAN KERNEL +++++++++++++++++++++++++++++++++++++++++++++
 
 //+++++++++++++++++++++++++++++++++++ BUTTERWORTH KERNEL ++++++++++++++++++++++++++++++++++++++++++++
 // OpenCL High Boost Butterworth Filter Kernel Which Is Run For Every Work Item Created
 const char *butterworth_kernel =
-"#define EXP 2.72																			\n" \
-"#pragma OPENCL EXTENSION cl_khr_fp32 : enable												\n"	\
-"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |							\n" \
-"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;					\n" \
-"__kernel																					\n"	\
-"void butterworth_kernel (__read_only image2d_t orimage,									\n"	\
-"						 __read_only image2d_t oiimage,										\n"	\
-"						 __write_only image2d_t trimage,									\n"	\
-"						 __write_only image2d_t tiimage,									\n"	\
-"						int height,															\n"	\
-"						int width,															\n"	\
-"						int CUTOFF,															\n"	\
-"						float Ord)															\n"	\
-"{																							\n"	\
-"	// Get the index of work items															\n"	\
-"	uint index = get_global_id(0);															\n"	\
-"	int u = index / width;																	\n"	\
-"	int v = index % width;																	\n"	\
-"	float4 ipixelValueR, ipixelValueI;														\n"	\
-"	float D = pow(height/2 - abs(u - height/2), 2.0) 										\n"	\
-"										+ pow(width/2 - abs(v - width/2), 2.0);				\n"	\
-"	float H = 1.0 + 1.0 / (1 + pow (CUTOFF / sqrt(D), 2 * Ord));							\n"	\
-"	ipixelValueR = read_imagef(orimage, image_sampler, (int2)(u, v));						\n" \
-"	ipixelValueI = read_imagef(oiimage, image_sampler, (int2)(u, v));						\n" \
-"	write_imagef(trimage, (int2)(u, v), ipixelValueR * H);									\n" \
-"	write_imagef(tiimage, (int2)(u, v), ipixelValueI * H);									\n" \
-"}																							\n"	\
+"#define EXP 2.72											\n" \
+"#pragma OPENCL EXTENSION cl_khr_fp32 : enable								\n" \
+"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |					\n" \
+"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;	\n" \
+"__kernel												\n" \
+"void butterworth_kernel (__read_only image2d_t orimage,						\n" \
+"						 __read_only image2d_t oiimage,				\n" \
+"						 __write_only image2d_t trimage,			\n" \
+"						 __write_only image2d_t tiimage,			\n" \
+"						int height,						\n" \
+"						int width,						\n" \
+"						int CUTOFF,						\n" \
+"						float Ord)						\n" \
+"{													\n" \
+"	// Get the index of work items									\n" \
+"	uint index = get_global_id(0);									\n" \
+"	int u = index / width;										\n" \
+"	int v = index % width;										\n" \
+"	float4 ipixelValueR, ipixelValueI;								\n" \
+"	float D = pow(height/2 - abs(u - height/2), 2.0) 						\n" \
+"					+ pow(width/2 - abs(v - width/2), 2.0);				\n" \
+"	float H = 1.0 + 1.0 / (1 + pow (CUTOFF / sqrt(D), 2 * Ord));					\n" \
+"	ipixelValueR = read_imagef(orimage, image_sampler, (int2)(u, v));				\n" \
+"	ipixelValueI = read_imagef(oiimage, image_sampler, (int2)(u, v));				\n" \
+"	write_imagef(trimage, (int2)(u, v), ipixelValueR * H);						\n" \
+"	write_imagef(tiimage, (int2)(u, v), ipixelValueI * H);						\n" \
+"}													\n" \
 "\n";
 //+++++++++++++++++++++++++++++++++ END BUTTERWORTH KERNEL ++++++++++++++++++++++++++++++++++++++++++
 
 //++++++++++++++++++++++++++++++ LAPLACIAN OF GAUSSIAN KERNEL +++++++++++++++++++++++++++++++++++++++
 // OpenCL Highboost LoG Filter Kernel Which Is Run For Every Work Item Created
 const char *LoG_kernel =
-"#define EXP 2.72																			\n" \
-"#pragma OPENCL EXTENSION cl_khr_fp32 : enable												\n"	\
-"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |							\n" \
-"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;					\n" \
-"__kernel																					\n"	\
-"void LoG_kernel (__read_only image2d_t orimage,											\n"	\
-"					__read_only image2d_t oiimage,											\n"	\
-"					__write_only image2d_t trimage,											\n"	\
-"					__write_only image2d_t tiimage,											\n"	\
-"					int height,																\n"	\
-"					int width,																\n"	\
-"					int CUTOFF)																\n"	\
-"{																							\n"	\
-"	// Get the index of work items															\n"	\
-"	uint index = get_global_id(0);															\n"	\
-"	int u = index / width;																	\n"	\
-"	int v = index % width;																	\n"	\
-"	float Freq = pow(CUTOFF, 2.0);															\n" \
-"	float4 ipixelValueR, ipixelValueI;														\n"	\
-"	float D = pow(height/2 - abs(u - height/2), 2.0) 										\n"	\
-"										+ pow(width/2 - abs(v - width/2), 2.0);				\n"	\
-"	float H = 2.0 - (1.0 - D / Freq) * pow(EXP, -1.0 * D / (2.0 * Freq));					\n"	\
-"	ipixelValueR = read_imagef(orimage, image_sampler, (int2)(u, v));						\n" \
-"	ipixelValueI = read_imagef(oiimage, image_sampler, (int2)(u, v));						\n" \
-"	write_imagef(trimage, (int2)(u, v), ipixelValueR * H);									\n" \
-"	write_imagef(tiimage, (int2)(u, v), ipixelValueI * H);									\n" \
-"}																							\n"	\
+"#define EXP 2.72											\n" \
+"#pragma OPENCL EXTENSION cl_khr_fp32 : enable								\n" \
+"__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE |					\n" \
+"							CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;	\n" \
+"__kernel												\n" \
+"void LoG_kernel (__read_only image2d_t orimage,							\n" \
+"					__read_only image2d_t oiimage,					\n" \
+"					__write_only image2d_t trimage,					\n" \
+"					__write_only image2d_t tiimage,					\n" \
+"					int height,							\n" \
+"					int width,							\n" \
+"					int CUTOFF)							\n" \
+"{													\n" \
+"	// Get the index of work items									\n" \
+"	uint index = get_global_id(0);									\n" \
+"	int u = index / width;										\n" \
+"	int v = index % width;										\n" \
+"	float Freq = pow(CUTOFF, 2.0);									\n" \
+"	float4 ipixelValueR, ipixelValueI;								\n" \
+"	float D = pow(height/2 - abs(u - height/2), 2.0) 						\n" \
+"						+ pow(width/2 - abs(v - width/2), 2.0);			\n" \
+"	float H = 2.0 - (1.0 - D / Freq) * pow(EXP, -1.0 * D / (2.0 * Freq));				\n" \
+"	ipixelValueR = read_imagef(orimage, image_sampler, (int2)(u, v));				\n" \
+"	ipixelValueI = read_imagef(oiimage, image_sampler, (int2)(u, v));				\n" \
+"	write_imagef(trimage, (int2)(u, v), ipixelValueR * H);						\n" \
+"	write_imagef(tiimage, (int2)(u, v), ipixelValueI * H);						\n" \
+"}													\n" \
 "\n";
 //++++++++++++++++++++++++++ END LAPLACIAN OF GAUSSIAN KERNEL +++++++++++++++++++++++++++++++++++++++
 
